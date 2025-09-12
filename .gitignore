@@ -1,7 +1,8 @@
 # Frontend
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+**/node_modules/
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -29,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -46,7 +48,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+### IDE ###
 .apt_generated
 .classpath
 .factorypath
@@ -54,14 +56,10 @@ target/
 .settings
 .springBeans
 .sts4-cache
-
-### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
-
-### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -70,6 +68,4 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-### VS Code ###
 .vscode/
