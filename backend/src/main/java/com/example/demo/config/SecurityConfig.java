@@ -27,7 +27,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
                 .anyRequest().authenticated()
             )
-            .httpBasic(httpBasic -> {});
+            .httpBasic(httpBasic -> {})
+            .addFilterBefore(new AdminSecondPasswordFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
