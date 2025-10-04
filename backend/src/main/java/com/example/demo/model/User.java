@@ -25,5 +25,8 @@ public class User {
     @JoinColumn(name="id")
     private Role role;
 
+    public String getPassword() {
+        return password;
+    }
 }
 
