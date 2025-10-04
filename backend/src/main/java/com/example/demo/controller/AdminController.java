@@ -18,4 +18,6 @@ public class AdminController {
     public String adminEndpoint() {
         return "Admin access granted!";
     }
+
+
 }
