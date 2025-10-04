@@ -1,10 +1,10 @@
 package com.example.demo.security;
 
-import jakarta.serverlet.FilterChain;
-import jakarta.serverlet.ServletException;
-import jakarta.serverlet.http.HttpFilter;
-import jakarta.serverlet.http.HttpServletRequest;
-import jakarta.serverlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.filter.OncePerRequestFilter;
