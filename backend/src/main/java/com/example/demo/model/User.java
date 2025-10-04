@@ -1,10 +1,7 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 
 @Data
@@ -22,11 +19,8 @@ public class User {
     private String username;
     private String password;
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="id")
+    @JoinColumn(name="role_id")
     private Role role;
 
-    public String getPassword() {
-        return password;
-    }
 }
 

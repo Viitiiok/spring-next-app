@@ -8,7 +8,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Receipt {
+public class Recipe {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
