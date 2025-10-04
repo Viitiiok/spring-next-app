@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthFactoryController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(

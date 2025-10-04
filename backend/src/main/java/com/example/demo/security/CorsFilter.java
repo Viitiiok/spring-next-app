@@ -1,10 +1,10 @@
 package com.example.demo.security;
 
-import jakarta.serverlet.FilterChain;
-import jakarta.serverlet.ServletException;
-import jakarta.serverlet.http.HttpFilter;
-import jakarta.serverlet.http.HttpServletRequest;
-import jakarta.serverlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,7 +21,7 @@ public class CorsFilter extends OncePerRequestFilter {
             response.setHeader("Vary", origin);
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
             response.setHeader("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, X-Requested-With, Accept, X-Custom-Header");
-            response.SetHeader("Access-Control-Expose-Headers", "Authorization, X-Custom-Header, Content-Disposition, X-XSRF-TOKEN, Set-Cookie");
+            response.setHeader("Access-Control-Expose-Headers", "Authorization, X-Custom-Header, Content-Disposition, X-XSRF-TOKEN, Set-Cookie");
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Max-Age", "3600");
 
