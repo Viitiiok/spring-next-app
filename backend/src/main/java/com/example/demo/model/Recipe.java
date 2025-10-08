@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "receipts")
+@Table(name = "recepies")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,5 +17,9 @@ public class Recipe {
 
     @Column(nullable = false, length = 5000)
     private String content;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name="user_id")
+    private User user;
 
 }
