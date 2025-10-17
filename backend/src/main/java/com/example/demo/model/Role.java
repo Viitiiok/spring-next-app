@@ -26,4 +26,9 @@ public class Role {
         return roleEnum != null ? roleEnum.name() : null;
     }
 
+    // Explicit setter to ensure compatibility when Lombok annotation processing is unavailable
+    public void setRoleEnum(RoleEnum roleEnum) {
+        this.roleEnum = roleEnum;
+    }
+
 }

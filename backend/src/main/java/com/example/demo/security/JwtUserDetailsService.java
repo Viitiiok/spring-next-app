@@ -22,15 +22,17 @@ public class JwtUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        // Try to find by email first, then by username
+        User user = userRepository.findByEmail(username)
+                .orElseGet(() -> userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email/username: " + username)));
 
-    return new JwtUser(
-        user.getId(),
-        user.getUsername(),
-        user.getPassword(),
-        user.getEnabled(),
-        List.of(new SimpleGrantedAuthority(user.getRole() != null ? user.getRole().getName() : "ROLE_USER"))
-    );
+        return new JwtUser(
+            user.getId(),
+            user.getEmail(), // Use email as username
+            user.getPassword(),
+            user.getEnabled(),
+            List.of(new SimpleGrantedAuthority("ROLE_" + (user.getRole() != null ? user.getRole().getName() : "USER")))
+        );
     }
 }
