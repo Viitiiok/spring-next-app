@@ -1,46 +1,53 @@
 package com.example.demo.exception;
 
-import com.example.demo.model.User;
-import com.example.demo.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
-import java.util.List;
+public class ErrorResponse {
+    private LocalDateTime timestamp;
+    private int status;
+    private String error;
+    private String message;
+    private String path;
 
-@Service
-public class UserService {
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    public ErrorResponse() {
+        this.timestamp = LocalDateTime.now();
     }
 
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public ErrorResponse(int status, String message) {
+        this();
+        this.status = status;
+        this.message = message;
     }
 
-    public Optional<User> findById(Long id) {
-        return userRepository.findById(id);
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
 
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public int getStatus() {
+        return status;
     }
 
-
-    public User save(User user) {
-        // Encode password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    public String getError() {
+        return error;
     }
 
-    public void deleteById(Long id) {
-        userRepository.deleteById(id);
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }

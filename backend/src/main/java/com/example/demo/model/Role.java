@@ -22,4 +22,8 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private RoleEnum roleEnum;
 
+    public String getName() {
+        return roleEnum != null ? roleEnum.name() : null;
+    }
+
 }

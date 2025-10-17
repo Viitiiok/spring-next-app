@@ -17,6 +17,8 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
+    private Boolean enabled = true;
+
     // No-argument constructor
     public User() {
     }
@@ -60,5 +62,13 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 }

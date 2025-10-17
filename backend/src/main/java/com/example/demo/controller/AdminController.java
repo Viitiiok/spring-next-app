@@ -15,7 +15,8 @@ public class AdminController {
 
     @GetMapping("/api/admin/users")
     public String adminEndpoint() {
-        return "Admin access granted!";
+        long userCount = userRepository.count();
+        return "Admin access granted! userCount=" + userCount;
     }
 
 
