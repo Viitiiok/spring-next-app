@@ -1,37 +1,32 @@
 package com.example.demo.config;
 
-import com.example.demo.security.CorsFilter;
-import com.example.demo.security.FilterChainExceptionHandler;
-import com.example.demo.security.JwtUserDetailsService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import static org.springframework.security.config.Customizer.withDefaults;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+
 public class SecurityConfig {
 
-    public static final String[] PUBLIC_ENDPOINTS = {
+    public static final String [] PUBLIC_ENDPOINTS = {
             "/api/public/**"
     };
 
     private final FilterChainExceptionHandler filterChainExceptionHandler;
-    private final JwtUserDetailsService userDetailsService;
-    private final CorsFilter corsFilter;
+    private final UserDetailsServiceImpl userDetailsService;
+    private CorsFilter corsFilter;
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
+    public AuthentificationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
@@ -46,18 +41,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(filterChainExceptionHandler, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                    .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
-                    .anyRequest().authenticated()
-            )
-            .httpBasic(withDefaults());
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth.requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .sessionManagement(SessionManagmentConfigurer<HttpSecurity> ::sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .aunthenticationProvider(authenticationProvider())
+                        .addFilterBefore(JwtAuthFilter, JwtAuthFilter.class)
+                        .addFilterBefore(filterChainExceptionHandler, UsernamePasswordAuthenticationFilter.class)
+                        .addFilterBefore(corsFilter(), ChannelProcessingFilter.class)
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .httpBasic(httpBasic -> {});
 
         return http.build();
     }
