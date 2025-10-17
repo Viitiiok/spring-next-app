@@ -1,11 +1,10 @@
 package com.example.demo.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class JwtUser implements UserDetails {
     private Long id;
@@ -14,12 +13,13 @@ public class JwtUser implements UserDetails {
     private Boolean enabled;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public JwtUser(Long id, String username, String password, Boolean enabled, Collection<? extends GrantedAuthority> authorities) {
+    // Constructor order aligned with JwtUserFactory.create(...)
+    public JwtUser(Long id, String username, String password, Collection<? extends GrantedAuthority> authorities, Boolean enabled) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.enabled = enabled;
         this.authorities = authorities;
+        this.enabled = enabled;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class JwtUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return enabled != null ? enabled : true;
     }
 
     public Long getId() {
@@ -65,12 +65,12 @@ public class JwtUser implements UserDetails {
     }
 
     @Override
-    public String toSpring() {
+    public String toString() {
         return "JwtUser{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
                 ", enabled=" + enabled +
                 ", authorities=" + authorities +
                 '}';
+    }
 }
