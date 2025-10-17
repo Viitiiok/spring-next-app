@@ -5,15 +5,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class JwtUser implements UserDetails {
-    private Long id;
-    private String username;
-    private String password;
-    private Boolean enabled;
-    private Collection<? extends GrantedAuthority> authorities;
+    private final Long id;
+    private final String username;
+    private final String password;
+    private final Boolean enabled;
+    private final Collection<? extends GrantedAuthority> authorities;
 
     public JwtUser(Long id, String username, String password, Boolean enabled, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
@@ -66,7 +64,7 @@ public class JwtUser implements UserDetails {
     }
 
     @Override
-    public String toSpring() {
+    public String toString() {
         return "JwtUser{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
@@ -74,4 +72,5 @@ public class JwtUser implements UserDetails {
                 ", enabled=" + enabled +
                 ", authorities=" + authorities +
                 '}';
-}}
+    }
+}

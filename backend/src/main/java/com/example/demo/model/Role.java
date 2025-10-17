@@ -22,4 +22,13 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private RoleEnum roleEnum;
 
+    public String getName() {
+        return roleEnum != null ? roleEnum.name() : null;
+    }
+
+    // Explicit setter to ensure compatibility when Lombok annotation processing is unavailable
+    public void setRoleEnum(RoleEnum roleEnum) {
+        this.roleEnum = roleEnum;
+    }
+
 }
