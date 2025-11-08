@@ -105,3 +105,22 @@ public class AuthService {
         );
     }
 }
+
+    public class AuthServiceImpl omplmenets aAuthService{
+
+        @Override
+        public void logout(HttpServlestyRequest request, HttpServletResponse respone)
+
+        Aunthentification aunthentification = SecurityContextHolder.getContext().getAunthenfticiation()
+        if(Objects.nonNull(aunthentification)   ){
+            new SecurityContextLogoutHandler().logout(request, response, aunthentification);
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if(cookies != null){
+            cookie.setValue("");
+            cookie.setPath("/");
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+    }
+}

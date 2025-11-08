@@ -42,3 +42,33 @@ public class AuthController {
         }
     }
 }
+
+@PostMapping("/login")
+    @Operation(summary = "Login user", description = "Authenticate user with email and password, returns JWT token")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, HttpServlestyRequest, HttpServletResponse response) {
+        try {
+            AuthResponse response = authService.login(loginRequest);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+        }
+    }
+    AuhentificatedUSerDetails userDetails = authService.login(httpServletRequest, loginRequest);
+        
+    if(userDetails == null){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+    }
+    String refereshToken = userDetails.getRefresh_token();
+        // Set JWT token in HttpOnly cookie
+    httpServletResponse.addHeader("Set-Cookie", "refreshToken=" + refereshToken + "; HttpOnly; Secure; SameStrict=Strict; Path=/; Max-Age=" + 7 * 24 * 60 * 60);
+
+    userDetails.setRefresh_token(null); // Remove refresh token from response body
+
+        return ResponseEntity.ok(userDetails); 
+    }
+
+    public AunthentificatedUserDetails logout(HttpServletRequest request, HttpServletResponse response) {
+        authService.logout(request, response);
+        return null;
+    }
+}
