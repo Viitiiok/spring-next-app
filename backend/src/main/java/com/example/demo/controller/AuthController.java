@@ -6,6 +6,8 @@ import com.example.demo.dto.SignupRequest;
 import com.example.demo.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,42 +35,38 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Authenticate user with email and password, returns JWT token")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, 
+                                  HttpServletRequest httpServletRequest,
+                                  HttpServletResponse httpServletResponse) {
         try {
             AuthResponse response = authService.login(loginRequest);
+            
+            // If you want to set refresh token in cookie, you'll need to modify your AuthService
+            // to return refresh tokens and then set them here
+            /*
+            String refreshToken = response.getRefreshToken();
+            if (refreshToken != null) {
+                String cookieValue = "refreshToken=" + refreshToken + 
+                                   "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=" + (7 * 24 * 60 * 60);
+                httpServletResponse.addHeader("Set-Cookie", cookieValue);
+                response.setRefreshToken(null); // Remove from response body
+            }
+            */
+            
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
         }
     }
-}
 
-@PostMapping("/login")
-    @Operation(summary = "Login user", description = "Authenticate user with email and password, returns JWT token")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, HttpServlestyRequest, HttpServletResponse response) {
+    @PostMapping("/logout")
+    @Operation(summary = "Logout user", description = "Invalidate user session and clear authentication tokens")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
-            AuthResponse response = authService.login(loginRequest);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            authService.logout(request, response);
+            return ResponseEntity.ok().body("Logged out successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed");
         }
-    }
-    AuhentificatedUSerDetails userDetails = authService.login(httpServletRequest, loginRequest);
-        
-    if(userDetails == null){
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
-    }
-    String refereshToken = userDetails.getRefresh_token();
-        // Set JWT token in HttpOnly cookie
-    httpServletResponse.addHeader("Set-Cookie", "refreshToken=" + refereshToken + "; HttpOnly; Secure; SameStrict=Strict; Path=/; Max-Age=" + 7 * 24 * 60 * 60);
-
-    userDetails.setRefresh_token(null); // Remove refresh token from response body
-
-        return ResponseEntity.ok(userDetails); 
-    }
-
-    public AunthentificatedUserDetails logout(HttpServletRequest request, HttpServletResponse response) {
-        authService.logout(request, response);
-        return null;
     }
 }

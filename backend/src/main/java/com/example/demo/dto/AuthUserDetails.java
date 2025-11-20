@@ -1,11 +1,11 @@
 package com.example.demo.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.springframework.security.core.GrantedAuthority;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Builder;
 
 @Data
 @NoArgsConstructor
@@ -13,45 +13,46 @@ import lombok.Builder;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthUserDetails {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false, unique = true)
     private String email;
-
     private String username;
+    
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+    
+    private String role;
+    private Boolean enabled;
+    
+    @JsonProperty("access_token")
+    private String accessToken;
+    
+    @JsonProperty("refresh_token")
+    private String refreshToken;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
-    private Role role;
-    private Boolean enabled = true;
-    private String access_token;
-    private String refresh_token;
-
-    // Getters and Setters
-    public static AunthentificatedUserDetails fromAunthentificatedUser(AuthenticatedUser user) {
-        return AunthentificatedUserDetails.builder()
+    // Static factory method to create AuthUserDetails from User entity
+    public static AuthUserDetails fromUser(com.example.demo.model.User user) {
+        return AuthUserDetails.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .username(user.getUsername())
-                .role(user.getRole().getRoleEnum().name())
+                .role(user.getRole() != null ? user.getRole().getName() : null)
                 .enabled(user.getEnabled())
                 .build();
     }
 
- AuhentificatedUSerDetails userDetails = authService.login(httpServletRequest, loginRequest);
-        // Set JWT token in HttpOnly cookie
-        Cookie jwtCookie = new Cookie("jwtToken", userDetails.getJwtToken());
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(24 * 60 * 60); // 1 day
-        response.addCookie(jwtCookie);
-
-        return ResponseEntity.ok(userDetails);
+    // Static factory method to create AuthUserDetails with tokens
+    public static AuthUserDetails withTokens(com.example.demo.model.User user, String accessToken, String refreshToken) {
+        return AuthUserDetails.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .role(user.getRole() != null ? user.getRole().getName() : null)
+                .enabled(user.getEnabled())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
 }

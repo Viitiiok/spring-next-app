@@ -10,14 +10,21 @@ import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtUtil;
 import com.example.demo.security.JwtUserDetailsService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 public class AuthService {
@@ -104,23 +111,27 @@ public class AuthService {
                 user.getRole().getName()
         );
     }
-}
 
-    public class AuthServiceImpl omplmenets aAuthService{
-
-        @Override
-        public void logout(HttpServlestyRequest request, HttpServletResponse respone)
-
-        Aunthentification aunthentification = SecurityContextHolder.getContext().getAunthenfticiation()
-        if(Objects.nonNull(aunthentification)   ){
-            new SecurityContextLogoutHandler().logout(request, response, aunthentification);
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (Objects.nonNull(authentication)) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
         }
 
+        // Clear any JWT cookies if they exist
         Cookie[] cookies = request.getCookies();
-        if(cookies != null){
-            cookie.setValue("");
-            cookie.setPath("/");
-            cookie.setMaxAge(0);
-            response.addCookie(cookie);
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName()) || "refreshToken".equals(cookie.getName())) {
+                    cookie.setValue("");
+                    cookie.setPath("/");
+                    cookie.setMaxAge(0);
+                    response.addCookie(cookie);
+                }
+            }
+        }
+
+        // Clear the security context
+        SecurityContextHolder.clearContext();
     }
 }

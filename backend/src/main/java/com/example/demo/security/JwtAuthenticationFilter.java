@@ -58,16 +58,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    jvtToken = jwtUtil.generateToken(userDetails);
-
-        AuthResponse authResponse = new AuthResponse();
-        authResponse.setToken(token);
-        authResponse.setTokenType("Bearer");
-        return authResponse;
-    }   
-        string username = jwtUtil.extractUsername(jwtToken);
-        UserDetails aunthentificationUserDetails
-
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
         
