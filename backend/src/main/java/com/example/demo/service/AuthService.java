@@ -49,7 +49,7 @@ public class AuthService {
     private JwtUserDetailsService userDetailsService;
 
     @Transactional
-    public AuthResponse signup(SignupRequest signupRequest) {
+    public AuthResponse signup(SignupRequest signupRequest, HttpServletRequest request) {
         // Check if email already exists
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             throw new RuntimeException("Email already exists");
@@ -72,22 +72,32 @@ public class AuthService {
         user.setRole(userRole);
         user.setEnabled(true);
 
+        // Capture client IP and set registeredIp / lastIp and timestamp
+        String clientIp = extractClientIp(request);
+        user.setRegisteredIp(clientIp);
+        user.setLastIp(clientIp);
+        user.setLastIpAt(java.time.OffsetDateTime.now());
+
         User savedUser = userRepository.save(user);
 
         // Generate JWT token
         UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getEmail());
         String token = jwtUtil.generateToken(userDetails);
 
-        return new AuthResponse(
-                token,
-                savedUser.getId(),
-                savedUser.getName(),
-                savedUser.getEmail(),
-                savedUser.getRole().getName()
+        AuthResponse authResponse = new AuthResponse(
+            token,
+            savedUser.getId(),
+            savedUser.getName(),
+            savedUser.getEmail(),
+            savedUser.getRole().getName(),
+            savedUser.getRegisteredIp(),
+            savedUser.getLastIp()
         );
+        authResponse.setLastIpAt(savedUser.getLastIpAt());
+        return authResponse;
     }
 
-    public AuthResponse login(LoginRequest loginRequest) {
+    public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
         // Authenticate user
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -102,15 +112,37 @@ public class AuthService {
 
         // Get user details
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return new AuthResponse(
-                token,
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().getName()
+        // Update last IP address and timestamp on each login
+        String clientIp = extractClientIp(request);
+        user.setLastIp(clientIp);
+        user.setLastIpAt(java.time.OffsetDateTime.now());
+        userRepository.save(user);
+
+        AuthResponse authResponse = new AuthResponse(
+            token,
+            user.getId(),
+            user.getName(),
+            user.getEmail(),
+            user.getRole().getName(),
+            user.getRegisteredIp(),
+            user.getLastIp()
         );
+        authResponse.setLastIpAt(user.getLastIpAt());
+        return authResponse;
+    }
+
+    /**
+     * Extract client IP handling common proxy headers.
+     */
+    private String extractClientIp(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null) {
+            return request.getRemoteAddr();
+        }
+        // X-Forwarded-For can contain multiple IPs, the first is the client
+        return xfHeader.split(",")[0].trim();
     }
 
     public void logout(HttpServletRequest request, HttpServletResponse response) {

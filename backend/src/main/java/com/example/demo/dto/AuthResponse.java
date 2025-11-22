@@ -9,6 +9,9 @@ public class AuthResponse {
     private String email;
     private String role;
     private String refreshToken;
+    private String registeredIp;
+    private String lastIp;
+    private java.time.OffsetDateTime lastIpAt;
     
     // Constructors
     public AuthResponse() {
@@ -20,6 +23,16 @@ public class AuthResponse {
         this.name = name;
         this.email = email;
         this.role = role;
+    }
+
+    public AuthResponse(String token, Long id, String name, String email, String role, String registeredIp, String lastIp) {
+        this.token = token;
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.registeredIp = registeredIp;
+        this.lastIp = lastIp;
     }
     
     // Getters and Setters
@@ -77,5 +90,29 @@ public class AuthResponse {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public String getRegisteredIp() {
+        return registeredIp;
+    }
+
+    public void setRegisteredIp(String registeredIp) {
+        this.registeredIp = registeredIp;
+    }
+
+    public String getLastIp() {
+        return lastIp;
+    }
+
+    public void setLastIp(String lastIp) {
+        this.lastIp = lastIp;
+    }
+
+    public java.time.OffsetDateTime getLastIpAt() {
+        return lastIpAt;
+    }
+
+    public void setLastIpAt(java.time.OffsetDateTime lastIpAt) {
+        this.lastIpAt = lastIpAt;
     }
 }
