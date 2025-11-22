@@ -14,6 +14,8 @@ import com.example.demo.security.JwtUserDetailsService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -47,6 +49,11 @@ public class AuthService {
 
     @Autowired
     private JwtUserDetailsService userDetailsService;
+
+    @Value("${security.trusted-proxies:}")
+    private String trustedProxiesConfig;
+
+    private java.util.List<String> trustedProxies = new java.util.ArrayList<>();
 
     @Transactional
     public AuthResponse signup(SignupRequest signupRequest, HttpServletRequest request) {
@@ -138,11 +145,37 @@ public class AuthService {
      */
     private String extractClientIp(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
+        String remoteAddr = request.getRemoteAddr();
+
         if (xfHeader == null) {
-            return request.getRemoteAddr();
+            return remoteAddr;
         }
-        // X-Forwarded-For can contain multiple IPs, the first is the client
-        return xfHeader.split(",")[0].trim();
+
+        // If no trusted proxies configured, fall back to old behavior (accept XFF).
+        if (trustedProxies.isEmpty()) {
+            return xfHeader.split(",")[0].trim();
+        }
+
+        // Only accept X-Forwarded-For if the immediate peer (remoteAddr) is in the trusted proxies list.
+        for (String trusted : trustedProxies) {
+            if (trusted.isEmpty()) continue;
+            if (remoteAddr.equals(trusted) || remoteAddr.startsWith(trusted)) {
+                return xfHeader.split(",")[0].trim();
+            }
+        }
+
+        // Not from a trusted proxy; ignore X-Forwarded-For
+        return remoteAddr;
+    }
+
+    @PostConstruct
+    private void initTrustedProxies() {
+        if (trustedProxiesConfig == null || trustedProxiesConfig.isBlank()) return;
+        String[] parts = trustedProxiesConfig.split(",");
+        for (String p : parts) {
+            String t = p.trim();
+            if (!t.isEmpty()) trustedProxies.add(t);
+        }
     }
 
     public void logout(HttpServletRequest request, HttpServletResponse response) {
