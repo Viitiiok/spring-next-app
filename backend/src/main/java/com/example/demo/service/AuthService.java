@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.SignupRequest;
+import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.Role;
 import com.example.demo.model.RoleEnum;
 import com.example.demo.model.User;
@@ -133,5 +134,45 @@ public class AuthService {
 
         // Clear the security context
         SecurityContextHolder.clearContext();
+    }
+
+    // Alternative login method using username
+    public AuthResponse loginWithUsername(LoginRequest loginRequest) {
+        String requestUsername = loginRequest.getEmail(); // Use email as username since LoginRequest doesn't have getUsername()
+        String requestPassword = loginRequest.getPassword();
+
+        User user = userRepository.findByUsername(requestUsername).orElse(null);
+
+        if (user == null) {
+            throw new UserNotFoundException("User with username " + requestUsername + " not found");
+        }
+        
+        // Authenticate user
+        authenticate(user, requestPassword);
+        
+        // Generate JWT token using existing method
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String accessToken = jwtUtil.generateToken(userDetails);
+        
+        return buildAuthUserDetails(user, accessToken);
+    }
+
+    private void authenticate(User user, String password) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        user.getUsername(),
+                        password
+                )
+        );
+    }
+
+    private AuthResponse buildAuthUserDetails(User user, String accessToken) {
+        return new AuthResponse(
+                accessToken,
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole() != null ? user.getRole().getName() : null
+        );
     }
 }

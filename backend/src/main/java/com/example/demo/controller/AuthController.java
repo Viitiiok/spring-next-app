@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,18 +41,19 @@ public class AuthController {
                                   HttpServletResponse httpServletResponse) {
         try {
             AuthResponse response = authService.login(loginRequest);
-            
-            // If you want to set refresh token in cookie, you'll need to modify your AuthService
-            // to return refresh tokens and then set them here
-            /*
-            String refreshToken = response.getRefreshToken();
+             String refreshToken = response.getRefreshToken();
             if (refreshToken != null) {
-                String cookieValue = "refreshToken=" + refreshToken + 
-                                   "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=" + (7 * 24 * 60 * 60);
-                httpServletResponse.addHeader("Set-Cookie", cookieValue);
-                response.setRefreshToken(null); // Remove from response body
+                Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+                refreshTokenCookie.setHttpOnly(true);
+                refreshTokenCookie.setSecure(true);
+                refreshTokenCookie.setPath("/");
+                refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
+                refreshTokenCookie.setAttribute("SameSite", "Strict");
+                httpServletResponse.addCookie(refreshTokenCookie);
+                
+                // Remove refresh token from response body if you're setting it in cookie
+                response.setRefreshToken(null);
             }
-            */
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
