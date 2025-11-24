@@ -1,6 +1,7 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "users")
@@ -24,6 +25,14 @@ public class User {
     private Role role;
 
     private Boolean enabled = true;
+    @Column(name = "registered_ip")
+    private String registeredIp;
+
+    @Column(name = "last_ip")
+    private String lastIp;
+
+    @Column(name = "last_ip_at")
+    private OffsetDateTime lastIpAt;
 
     // No-argument constructor
     public User() {
@@ -94,5 +103,29 @@ public class User {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getRegisteredIp() {
+        return registeredIp;
+    }
+
+    public void setRegisteredIp(String registeredIp) {
+        this.registeredIp = registeredIp;
+    }
+
+    public String getLastIp() {
+        return lastIp;
+    }
+
+    public void setLastIp(String lastIp) {
+        this.lastIp = lastIp;
+    }
+
+    public OffsetDateTime getLastIpAt() {
+        return lastIpAt;
+    }
+
+    public void setLastIpAt(OffsetDateTime lastIpAt) {
+        this.lastIpAt = lastIpAt;
     }
 }

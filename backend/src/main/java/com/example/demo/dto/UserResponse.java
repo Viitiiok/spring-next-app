@@ -7,6 +7,9 @@ public class UserResponse {
     private String email;
     private String role;
     private Boolean enabled;
+    private String registeredIp;
+    private String lastIp;
+    private java.time.OffsetDateTime lastIpAt;
     
     // Constructors
     public UserResponse() {
@@ -18,6 +21,35 @@ public class UserResponse {
         this.email = email;
         this.role = role;
         this.enabled = enabled;
+    }
+
+    public UserResponse(Long id, String name, String email, String role, Boolean enabled, String registeredIp, String lastIp) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.enabled = enabled;
+        this.registeredIp = registeredIp;
+        this.lastIp = lastIp;
+    }
+
+    public UserResponse(Long id, String name, String email, String role, Boolean enabled, String registeredIp, String lastIp, java.time.OffsetDateTime lastIpAt) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.enabled = enabled;
+        this.registeredIp = registeredIp;
+        this.lastIp = lastIp;
+        this.lastIpAt = lastIpAt;
+    }
+
+    public java.time.OffsetDateTime getLastIpAt() {
+        return lastIpAt;
+    }
+
+    public void setLastIpAt(java.time.OffsetDateTime lastIpAt) {
+        this.lastIpAt = lastIpAt;
     }
     
     // Getters and Setters
@@ -59,5 +91,21 @@ public class UserResponse {
     
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getRegisteredIp() {
+        return registeredIp;
+    }
+
+    public void setRegisteredIp(String registeredIp) {
+        this.registeredIp = registeredIp;
+    }
+
+    public String getLastIp() {
+        return lastIp;
+    }
+
+    public void setLastIp(String lastIp) {
+        this.lastIp = lastIp;
     }
 }

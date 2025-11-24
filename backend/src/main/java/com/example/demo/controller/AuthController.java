@@ -6,6 +6,9 @@ import com.example.demo.dto.SignupRequest;
 import com.example.demo.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,9 +25,9 @@ public class AuthController {
 
     @PostMapping("/signup")
     @Operation(summary = "Register a new user", description = "Create a new user account with name, email, and password")
-    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest, HttpServletRequest httpServletRequest) {
         try {
-            AuthResponse response = authService.signup(signupRequest);
+            AuthResponse response = authService.signup(signupRequest, httpServletRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -33,12 +36,40 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Authenticate user with email and password, returns JWT token")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, 
+                                  HttpServletRequest httpServletRequest,
+                                  HttpServletResponse httpServletResponse) {
         try {
-            AuthResponse response = authService.login(loginRequest);
+            AuthResponse response = authService.login(loginRequest, httpServletRequest);
+             String refreshToken = response.getRefreshToken();
+            if (refreshToken != null) {
+                ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                        .httpOnly(true)
+                        .secure(true)
+                        .path("/")
+                        .maxAge(7 * 24 * 60 * 60)
+                        .sameSite("Strict")
+                        .build();
+                httpServletResponse.addHeader("Set-Cookie", cookie.toString());
+
+                // Remove refresh token from response body if you're setting it in cookie
+                response.setRefreshToken(null);
+            }
+            
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+        }
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout user", description = "Invalidate user session and clear authentication tokens")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            authService.logout(request, response);
+            return ResponseEntity.ok().body("Logged out successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Logout failed");
         }
     }
 }
