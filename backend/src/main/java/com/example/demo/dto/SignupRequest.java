@@ -18,6 +18,9 @@ public class SignupRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
     
+    // Optional role field (defaults to USER if not provided)
+    private String role; // "USER" or "ADMIN"
+    
     // Constructors
     public SignupRequest() {
     }
@@ -26,6 +29,13 @@ public class SignupRequest {
         this.name = name;
         this.email = email;
         this.password = password;
+    }
+    
+    public SignupRequest(String name, String email, String password, String role) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.role = role;
     }
     
     // Getters and Setters
@@ -51,5 +61,13 @@ public class SignupRequest {
     
     public void setPassword(String password) {
         this.password = password;
+    }
+    
+    public String getRole() {
+        return role;
+    }
+    
+    public void setRole(String role) {
+        this.role = role;
     }
 }

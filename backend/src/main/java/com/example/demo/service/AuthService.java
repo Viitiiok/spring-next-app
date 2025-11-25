@@ -3,13 +3,13 @@ package com.example.demo.service;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.SignupRequest;
+import com.example.demo.dto.SignupResponse;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.Role;
 import com.example.demo.model.RoleEnum;
 import com.example.demo.model.User;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.security.JwtUtil;
 import com.example.demo.security.JwtUserDetailsService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,7 +42,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtService jwtService;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -56,17 +56,31 @@ public class AuthService {
     private java.util.List<String> trustedProxies = new java.util.ArrayList<>();
 
     @Transactional
-    public AuthResponse signup(SignupRequest signupRequest, HttpServletRequest request) {
+    public SignupResponse signup(SignupRequest signupRequest, HttpServletRequest request) {
         // Check if email already exists
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        // Get or create USER role
-        Role userRole = roleRepository.findByRoleEnum(RoleEnum.USER)
+        // Determine which role to assign (defaults to USER if not specified)
+        String requestedRole = signupRequest.getRole();
+        RoleEnum roleEnum = RoleEnum.USER; // default
+        
+        if (requestedRole != null && !requestedRole.isEmpty()) {
+            try {
+                roleEnum = RoleEnum.valueOf(requestedRole.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Invalid role provided, default to USER
+                roleEnum = RoleEnum.USER;
+            }
+        }
+        
+        // Get or create the role
+        final RoleEnum finalRoleEnum = roleEnum;
+        Role userRole = roleRepository.findByRoleEnum(finalRoleEnum)
                 .orElseGet(() -> {
                     Role newRole = new Role();
-                    newRole.setRoleEnum(RoleEnum.USER);
+                    newRole.setRoleEnum(finalRoleEnum);
                     return roleRepository.save(newRole);
                 });
 
@@ -87,12 +101,8 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Generate JWT token
-        UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getEmail());
-        String token = jwtUtil.generateToken(userDetails);
-
-        AuthResponse authResponse = new AuthResponse(
-            token,
+        // Return user info without any tokens (user must login to get tokens)
+        SignupResponse signupResponse = new SignupResponse(
             savedUser.getId(),
             savedUser.getName(),
             savedUser.getEmail(),
@@ -100,8 +110,8 @@ public class AuthService {
             savedUser.getRegisteredIp(),
             savedUser.getLastIp()
         );
-        authResponse.setLastIpAt(savedUser.getLastIpAt());
-        return authResponse;
+        signupResponse.setLastIpAt(savedUser.getLastIpAt());
+        return signupResponse;
     }
 
     public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
@@ -113,13 +123,15 @@ public class AuthService {
                 )
         );
 
-        // Generate JWT token
+        // Generate JWT tokens (access + refresh)
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String token = jwtUtil.generateToken(userDetails);
+        String accessToken = jwtService.generateToken(userDetails);
 
         // Get user details
         User user = userRepository.findByEmail(loginRequest.getEmail())
             .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String refreshToken = jwtService.createRefreshToken(user);
 
         // Update last IP address and timestamp on each login
         String clientIp = extractClientIp(request);
@@ -128,7 +140,7 @@ public class AuthService {
         userRepository.save(user);
 
         AuthResponse authResponse = new AuthResponse(
-            token,
+            accessToken,
             user.getId(),
             user.getName(),
             user.getEmail(),
@@ -136,6 +148,7 @@ public class AuthService {
             user.getRegisteredIp(),
             user.getLastIp()
         );
+        authResponse.setRefreshToken(refreshToken);
         authResponse.setLastIpAt(user.getLastIpAt());
         return authResponse;
     }
@@ -178,6 +191,42 @@ public class AuthService {
         }
     }
 
+    public AuthResponse refreshToken(String refreshToken) {
+        // Validate refresh token and extract username
+        String username = jwtService.getUsername(refreshToken, JwtService.TokenType.REFRESH);
+        
+        if (username == null) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+        
+        // Check if token is valid
+        if (!jwtService.isTokenValid(refreshToken, JwtService.TokenType.REFRESH)) {
+            throw new RuntimeException("Refresh token has expired");
+        }
+        
+        // Load user details
+        User user = userRepository.findByEmail(username)
+                .or(() -> userRepository.findByUsername(username))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Generate new access token
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String newAccessToken = jwtService.generateToken(userDetails);
+        
+        // Return response with new access token (optionally generate new refresh token too)
+        AuthResponse authResponse = new AuthResponse(
+            newAccessToken,
+            user.getId(),
+            user.getName(),
+            user.getEmail(),
+            user.getRole().getName(),
+            user.getRegisteredIp(),
+            user.getLastIp()
+        );
+        authResponse.setLastIpAt(user.getLastIpAt());
+        return authResponse;
+    }
+
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (Objects.nonNull(authentication)) {
@@ -199,45 +248,5 @@ public class AuthService {
 
         // Clear the security context
         SecurityContextHolder.clearContext();
-    }
-
-    // Alternative login method using username
-    public AuthResponse loginWithUsername(LoginRequest loginRequest) {
-        String requestUsername = loginRequest.getEmail(); // Use email as username since LoginRequest doesn't have getUsername()
-        String requestPassword = loginRequest.getPassword();
-
-        User user = userRepository.findByUsername(requestUsername).orElse(null);
-
-        if (user == null) {
-            throw new UserNotFoundException("User with username " + requestUsername + " not found");
-        }
-        
-        // Authenticate user
-        authenticate(user, requestPassword);
-        
-        // Generate JWT token using existing method
-        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
-        String accessToken = jwtUtil.generateToken(userDetails);
-        
-        return buildAuthUserDetails(user, accessToken);
-    }
-
-    private void authenticate(User user, String password) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        user.getUsername(),
-                        password
-                )
-        );
-    }
-
-    private AuthResponse buildAuthUserDetails(User user, String accessToken) {
-        return new AuthResponse(
-                accessToken,
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole() != null ? user.getRole().getName() : null
-        );
     }
 }

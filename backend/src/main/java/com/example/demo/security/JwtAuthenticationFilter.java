@@ -19,7 +19,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private com.example.demo.service.JwtService jwtService;
 
     @Autowired
     private JwtUserDetailsService userDetailsService;
@@ -33,12 +33,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             
             if (jwt != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String username = jwtUtil.extractUsername(jwt);
+                String username = jwtService.extractUsername(jwt);
                 
                 if (username != null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     
-                    if (jwtUtil.validateToken(jwt, userDetails)) {
+                    if (jwtService.validateToken(jwt, userDetails)) {
                         UsernamePasswordAuthenticationToken authentication = 
                             new UsernamePasswordAuthenticationToken(
                                 userDetails, 

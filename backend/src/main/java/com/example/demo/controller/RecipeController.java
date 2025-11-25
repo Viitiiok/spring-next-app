@@ -1,67 +1,49 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.RecipeDto;
+import com.example.demo.dto.RecipeRequest;
+import com.example.demo.model.Recipe;
 import com.example.demo.service.RecipeService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/recipes")
+@Tag(name = "Recipes", description = "Recipe management (ADMIN creates/deletes, all can view)")
+@SecurityRequirement(name = "Bearer Authentication")
 public class RecipeController {
 
-    private final RecipeService recipeService;
+    @Autowired
+    private RecipeService recipeService;
 
-    public RecipeController(RecipeService recipeService) {
-        this.recipeService = recipeService;
-    }
-
-    // GET /api/recipes
     @GetMapping
-    public ResponseEntity<List<RecipeDto>> getAllRecipes() {
-        return ResponseEntity.ok(recipeService.findAll());
+    @Operation(summary = "Get all recipes", description = "Retrieve all recipes with their comments (accessible by USER and ADMIN)")
+    public ResponseEntity<List<Recipe>> getAllRecipes() {
+        return ResponseEntity.ok(recipeService.getAllRecipes());
     }
 
-    // GET /api/recipes/{id}
-    @GetMapping("/{id}")
-    public ResponseEntity<RecipeDto> getRecipeById(@PathVariable Long id) {
-        return ResponseEntity.ok(recipeService.findById(id));
-    }
-
-    // POST /api/recipes
     @PostMapping
-    public ResponseEntity<RecipeDto> createRecipe(@RequestBody RecipeDto recipeDto) {
-        RecipeDto created = recipeService.save(recipeDto);
-        return ResponseEntity.ok(created);
+    @Operation(summary = "Create a new recipe", description = "Create a new recipe (ADMIN only)")
+    public ResponseEntity<Recipe> createRecipe(
+            @Valid @RequestBody RecipeRequest request,
+            Authentication authentication) {
+        String userEmail = authentication.getName();
+        Recipe created = recipeService.createRecipe(request, userEmail);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // PUT /api/recipes/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<RecipeDto> updateRecipe(
-            @PathVariable Long id,
-            @RequestBody RecipeDto recipeDto
-    ) {
-        RecipeDto updated = recipeService.update(id, recipeDto);
-        return ResponseEntity.ok(updated);
-    }
-
-    // DELETE /api/recipes/{id}
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a recipe", description = "Delete a recipe by ID (ADMIN only)")
     public ResponseEntity<Void> deleteRecipe(@PathVariable Long id) {
-        recipeService.deleteById(id);
+        recipeService.deleteRecipeById(id);
         return ResponseEntity.noContent().build();
-    }
-
-    // GET /api/recipes/search?title=...
-    @GetMapping("/search")
-    public ResponseEntity<List<RecipeDto>> searchRecipes(@RequestParam String title) {
-        return ResponseEntity.ok(recipeService.searchByTitle(title));
-    }
-
-    // GET /api/recipes/user/{userId}
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<RecipeDto>> getRecipesByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(recipeService.findByUser(userId));
     }
 }

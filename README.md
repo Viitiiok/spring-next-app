@@ -23,18 +23,3 @@ mvn spring-boot:run
 
 Backend will be running at:
 👉 http://localhost:8080
-
--------------------------
-
-cd frontend
-npm install
-npm run dev
-
-Frontend will be running at:
-👉 http://localhost:3000
-
-From the project root:
-docker compose up --build
-
-Stop containers:
-docker compose down

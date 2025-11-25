@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
 
     public static final String[] PUBLIC_ENDPOINTS = {
@@ -70,8 +71,16 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Recipe endpoints - ADMIN only for POST/DELETE, anyone authenticated for GET
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/recipes").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/recipes/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/recipes/**").hasAnyRole("USER", "ADMIN")
+                // Comment endpoints - both USER and ADMIN
+                .requestMatchers("/api/recipes/*/comments/**").hasAnyRole("USER", "ADMIN")
+                // User management - ADMIN only
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
         );
 

@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.SignupRequest;
+import com.example.demo.dto.SignupResponse;
 import com.example.demo.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,10 +25,10 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/signup")
-    @Operation(summary = "Register a new user", description = "Create a new user account with name, email, and password")
+    @Operation(summary = "Register a new user", description = "Create a new user account with name, email, and password. User must login to receive tokens.")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest, HttpServletRequest httpServletRequest) {
         try {
-            AuthResponse response = authService.signup(signupRequest, httpServletRequest);
+            SignupResponse response = authService.signup(signupRequest, httpServletRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -35,13 +36,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Login user", description = "Authenticate user with email and password, returns JWT token")
+    @Operation(summary = "Login user", description = "Authenticate user with email and password, returns both access and refresh tokens")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, 
                                   HttpServletRequest httpServletRequest,
                                   HttpServletResponse httpServletResponse) {
         try {
             AuthResponse response = authService.login(loginRequest, httpServletRequest);
-             String refreshToken = response.getRefreshToken();
+            String refreshToken = response.getRefreshToken();
+            
+            // Set refresh token in HTTP-only cookie for browser security
             if (refreshToken != null) {
                 ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                         .httpOnly(true)
@@ -51,14 +54,34 @@ public class AuthController {
                         .sameSite("Strict")
                         .build();
                 httpServletResponse.addHeader("Set-Cookie", cookie.toString());
-
-                // Remove refresh token from response body if you're setting it in cookie
-                response.setRefreshToken(null);
             }
             
+            // Return response with BOTH tokens visible (as requested by teacher)
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+        }
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token", description = "Exchange a valid refresh token for a new access token")
+    public ResponseEntity<?> refreshToken(@CookieValue(name = "refreshToken", required = false) String cookieRefreshToken,
+                                         @RequestBody(required = false) java.util.Map<String, String> body) {
+        try {
+            // Try to get refresh token from cookie first, then from request body
+            String refreshToken = cookieRefreshToken;
+            if (refreshToken == null && body != null) {
+                refreshToken = body.get("refreshToken");
+            }
+            
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Refresh token is required");
+            }
+            
+            AuthResponse response = authService.refreshToken(refreshToken);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired refresh token");
         }
     }
 

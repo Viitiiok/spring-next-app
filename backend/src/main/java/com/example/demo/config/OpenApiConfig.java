@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(
-                title = "Spring Boot JWT API",
+                title = "Recipe & Comments API with JWT Security",
                 version = "1.0",
-                description = "REST API with JWT authentication"
+                description = "REST API demonstrating JWT authentication with access/refresh tokens, HTTP-only cookies, and role-based authorization (USER/ADMIN). Includes recipe and comment management endpoints."
         )
 )
 @SecurityScheme(

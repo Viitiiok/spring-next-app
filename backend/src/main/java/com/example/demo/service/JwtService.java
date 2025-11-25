@@ -35,17 +35,26 @@ public class JwtService {
         ACCESS, REFRESH
     }
 
-    public String generateAccessToken(UserDetails userDetails) {
+    // Generate token for user (main method for login)
+    public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        // Add custom claims
-        if (userDetails instanceof com.example.demo.model.User) {
-            com.example.demo.model.User user = (com.example.demo.model.User) userDetails;
-            claims.put("userId", String.valueOf(user.getId()));
-            claims.put("role", user.getRole().getName());
-        }
         claims.put("authorities", userDetails.getAuthorities().toString());
-        
         return generateToken(claims, userDetails.getUsername(), TokenType.ACCESS);
+    }
+
+    public String generateAccessToken(UserDetails userDetails) {
+        return generateToken(userDetails);
+    }
+    
+    // Extract username from token (for filter compatibility)
+    public String extractUsername(String token) {
+        return getUsername(token, TokenType.ACCESS);
+    }
+    
+    // Validate token with UserDetails (for filter compatibility)
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token, TokenType.ACCESS));
     }
 
     public String createRefreshToken(com.example.demo.model.User user) {
